@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import re
 
 
+#project is still in progress, it will not parse all applicable pictures, but it will parse a number of pictures throughout the whole page.
 imagedict = {}
 numPics = 0
 

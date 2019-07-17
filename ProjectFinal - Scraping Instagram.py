@@ -6,7 +6,8 @@ from time import sleep
 
 
 # issues: does not store the image to the hard disk, also does not parse a multi-image set
-# ways to scroll down: page down, navigate to element, down arrow
+# timing could be improved by only parsing a page that has stored elements: the current process was simply parsing after scrolling down
+# ways to scroll down: page down (what was used), navigate to element, down arrow
 # also to test if the page is the same can filter through bs4
 # you could test if the first element still exists and then move forward. This might be worth a try.
 

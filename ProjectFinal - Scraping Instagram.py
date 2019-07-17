@@ -1,21 +1,47 @@
-from selenium import webdriver
-from selenium.common import exceptions
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from time import sleep
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 import re
+from time import sleep
 
 
-#project is still in progress, it will not parse all applicable pictures, but it will parse a number of pictures throughout the whole page.
+# issues: does not store the image to the hard disk, also does not parse a multi-image set
+# ways to scroll down: page down, navigate to element, down arrow
+# also to test if the page is the same can filter through bs4
+# you could test if the first element still exists and then move forward. This might be worth a try.
+
+
 imagedict = {}
-numPics = 0
 
+
+def findimages(page_source, imagedict):
+    instasoup = BeautifulSoup(driver.page_source, 'lxml')  # this may not work, may need requests first
+    srcsets = instasoup.select('img[srcset]')
+
+    counter = 0
+    print('new page search:')
+    for img in srcsets:
+
+        picture = img['src']
+        tag = img.parent
+
+        parentcheck = re.compile(r'<div[^>]{1,}role="button" tabindex="0">')
+
+        for parent in img.parents:
+            parentstring = str(parent)
+
+            if (parent.has_attr('class')):  #
+                if parent['class'].count('ZyFrc') > 0:
+                    tag = parent
+                    if tag.parent.parent.find('div', {'class': 'C4VMK'}) is not None:
+                        print(tag.parent.parent.find('div', {'class': 'C4VMK'}).span.span.string.strip())
+                        name = tag.parent.parent.find('div', {'class': 'C4VMK'}).span.span.string.strip()
+                        imagedict[name] = picture
+
+
+#here is getting to the instagram page
 chromedriverlocation = 'D:\Dropbox\ProgrammingFiles\PythonScrape\chromedriver_win32\chromedriver.exe'
-debug = True
-wait_time = 0
-if (debug):
-    wait_time = 1.5
+wait_time = 2
 
 driver = webdriver.Chrome(chromedriverlocation)
 
@@ -42,79 +68,30 @@ sleep(wait_time)
 ignore_notifications = driver.find_element_by_xpath("//button[text() = 'Not Now']")
 ignore_notifications.click()
 
-
-def soupnstore(page_source):
-
-    instasoup = BeautifulSoup(page_source, 'lxml') #this may not work, may need requests first
-    images = instasoup.find_all('img')
-    for img in images:
-        #this works imgCheck = re.compile(r'<img.*[^>]src.*[^>]style.*/>') #parsing tags would be an iteration, this just includes each without making a try except block
-        imgcheck = re.compile(r'<img[^>]{1,}src[^>]{1,}style.*/>')
-        if imgcheck.match(str(img)):
-            picture = img['src']
-            tag = img.parent
-            parentcheck = re.compile(r'<div[^>]{1,}role.*/>')
-            print(img)
-            for parent in img.parents:
-                if parentcheck.match(str(parent)):
-                    tag = parent
-                    break
-            if tag.parent.next_sibling is not None:
-                name = tag.parent.next_sibling.h2.next_sibling.span.string
-                imagedict[name] = picture
-            else:
-                print('what was none:', tag.parent.parent.prettify())
-        #now it needs to scroll down and store the files
-
-
-
-
 rng = 100
-initialTitle = driver.find_element_by_xpath("//h2/following-sibling::span/span")
-xpathSelect = "//h2/following-sibling::span/span"
-once = False
-action = ActionChains(driver)
-short_wait = 2
+runcount = 0
+runend = 3
 prevHeight = 0
-initialrun = 2 #in case the run doesn't even start after the first rounds
-body = driver.find_element_by_xpath('/html/body')
-soupnstore(driver.page_source)
+xpathSelect = "(//h2/following-sibling::span/span)[last()]"
+lastelement = driver.find_element_by_xpath(xpathSelect)
 for i in range(0, rng):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    scrollHeight = driver.execute_script("return document.body.scrollHeight;")
+    runcount += 1
+    findimages(driver.page_source, imagedict)
+    body = driver.find_element_by_xpath('/html/body')
     body.send_keys(Keys.PAGE_DOWN)
-    if scrollHeight == prevHeight and initialrun < 0:
-        break
+
+    curlast = driver.find_element_by_xpath(xpathSelect)
+    print(lastelement)
+    if curlast == lastelement:
+        runcount += 1
+        if runcount > runend:
+            break
     else:
-        prevHeight = scrollHeight
-    initialrun -= 1
-    soupnstore(driver.page_source)
-    sleep(short_wait)
+        lastelement = curlast
+        runcount = 0
 
 
-    '''
-    #driver.refresh()
-    try:
-        newelement = driver.find_element_by_xpath(xpathSelect)
-    except exceptions.NoSuchElementException as exc:
-        print(exc)
-        print('ended at', xpathSelect)
-        break
-    text = newelement.text
-
-    action.move_to_element(newelement)
-    action.perform()
-    sleep(short_wait)
-    print(text)
-    if not once:
-        xpathSelect += "[text()!='" + text + "']"
-        once = True
-    else:
-        newSelect = xpathSelect[0:(len(xpathSelect) - 1)]+" and "
-        xpathSelect = newSelect + "text()!='" + text + "']"
-    print(xpathSelect)
-    '''
-#this needs to be parsed slowly, different beautifulsoups for each portion of the web page apparently
-print(imagedict.keys())
-print('items found:', len(imagedict.keys()))
+print('all sampled pictures:')
+for key in imagedict.keys():
+    print(key)
 driver.close()

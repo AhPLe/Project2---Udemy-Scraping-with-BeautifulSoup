@@ -53,8 +53,8 @@ driver.get(extendedurl)
 #loginLink = driver.find_element_by_xpath("//a[text()='Log in']")
 #loginLink.click()
 
-user = 'scrape2019' #alternate: sinjzmaj@hotmail.com
-password = 'instapass'
+user = 'usernamehere'
+password = 'password'
 
 sleep(wait_time)
 userInput = driver.find_element_by_name('username')
